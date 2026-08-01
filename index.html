@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PyLauncher — лаунчер Minecraft</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: #141417;
+    color: #FFFFFF;
+    font-family: 'Onest', 'Segoe UI', sans-serif;
+    overflow-x: hidden;
+  }
+  a { color: inherit; text-decoration: none; }
+
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+  header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(20, 20, 23, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid #1C1C20;
+  }
+  nav { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+  .logo { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 16px; }
+  .logo-dot { width: 10px; height: 10px; border-radius: 2px; background: #FF7B1D; }
+  .nav-links { display: flex; gap: 28px; align-items: center; }
+  .nav-links a { color: #656571; font-size: 14px; transition: color .15s; }
+  .nav-links a:hover { color: #FFFFFF; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: #FF7B1D; color: #FFFFFF; font-weight: 600;
+    padding: 12px 28px; border-radius: 10px; font-size: 15px;
+    transition: background .15s, box-shadow .15s; border: none; cursor: pointer;
+    box-shadow: 0 6px 24px rgba(255,123,29,0.35);
+  }
+  .btn:hover { background: #AF5A1D; }
+  .btn-ghost {
+    background: #26262B; color: #D8D8D8; box-shadow: none;
+  }
+  .btn-ghost:hover { background: #303037; }
+
+  .hero { padding: 110px 0 90px; }
+  .hero-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 60px; align-items: center; }
+  .badge {
+    display: inline-block; font-size: 12px; color: #14CF7E;
+    border: 1px solid rgba(20,207,126,.35); background: rgba(20,207,126,.08);
+    padding: 5px 12px; border-radius: 999px; margin-bottom: 20px;
+  }
+  h1 { font-size: 44px; line-height: 1.15; font-weight: 700; margin-bottom: 18px; }
+  h1 span { color: #FF7B1D; }
+  .hero p { color: #9a9aa3; font-size: 16px; line-height: 1.6; max-width: 480px; margin-bottom: 30px; }
+  .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+  .hero-note { margin-top: 14px; font-size: 12px; color: #656571; }
+
+  .window {
+    background: #18181C; border: 1px solid #1C1C20; border-radius: 12px;
+    padding: 16px; box-shadow: 0 34px 58px rgba(0,0,0,.5);
+  }
+  .win-top { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+  .win-top span { width: 10px; height: 10px; border-radius: 50%; }
+  .win-top span:nth-child(1) { background: #FF6363; }
+  .win-top span:nth-child(2) { background: #FFB020; }
+  .win-top span:nth-child(3) { background: #14CF7E; }
+  .win-body { background: #141417; border-radius: 8px; padding: 20px; }
+  .win-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #1C1C20; font-size: 13px; }
+  .win-row:last-child { border-bottom: none; }
+  .win-row span { color: #656571; }
+  .win-row b { color: #D8D8D8; font-weight: 500; }
+  .win-play {
+    margin-top: 14px; width: 100%; padding: 16px; border-radius: 10px;
+    background: #FF7B1D; color: #fff; font-family: inherit; font-size: 18px; font-weight: 600;
+    border: none; cursor: pointer; box-shadow: 0 6px 46px rgba(255,123,29,0.44);
+  }
+
+  section { padding: 70px 0; }
+  .section-title { font-size: 30px; font-weight: 700; margin-bottom: 40px; text-align: center; }
+
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .feature {
+    background: #18181C; border: 1px solid #1C1C20; border-radius: 12px; padding: 26px;
+    transition: border-color .2s, transform .2s;
+  }
+  .feature:hover { border-color: rgba(255,123,29,.5); transform: translateY(-3px); }
+  .feature-ico {
+    width: 40px; height: 40px; border-radius: 10px; background: rgba(255,123,29,.12);
+    display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 16px;
+  }
+  .feature h3 { font-size: 16px; margin-bottom: 8px; }
+  .feature p { color: #9a9aa3; font-size: 13.5px; line-height: 1.6; }
+
+  .versions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .version {
+    background: #18181C; border: 1px solid #1C1C20; border-radius: 12px; padding: 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .version .v-name { font-size: 17px; font-weight: 600; }
+  .version .v-desc { color: #656571; font-size: 13px; margin-top: 4px; }
+  .version .v-tag {
+    font-size: 11px; padding: 4px 10px; border-radius: 999px; font-weight: 600;
+  }
+  .tag-orange { background: rgba(255,123,29,.15); color: #FF7B1D; }
+  .tag-green { background: rgba(20,207,126,.12); color: #14CF7E; }
+  .tag-gray { background: #26262B; color: #D8D8D8; }
+
+  .download { text-align: center; background: #18181C; border: 1px solid #1C1C20; border-radius: 16px; padding: 60px 30px; }
+  .download h2 { font-size: 28px; margin-bottom: 12px; }
+  .download p { color: #9a9aa3; margin-bottom: 28px; }
+  .sysreq { margin-top: 30px; display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; font-size: 13px; color: #656571; }
+  .sysreq b { display: block; color: #D8D8D8; font-weight: 500; margin-bottom: 4px; }
+
+  footer { border-top: 1px solid #1C1C20; padding: 30px 0; color: #656571; font-size: 13px; }
+  footer .wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    h1 { font-size: 34px; }
+    .features, .versions { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <nav>
+      <div class="logo"><span class="logo-dot"></span>PyLauncher</div>
+      <div class="nav-links">
+        <a href="#features">Возможности</a>
+        <a href="#versions">Версии</a>
+        <a href="#download">Скачать</a>
+        <a href="#" class="btn btn-ghost" style="padding:8px 18px;font-size:13px">Форум</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="badge">● Свежий клиент Phobia и официальные версии</span>
+      <h1>Быстрый лаунчер<br>для <span>Minecraft</span></h1>
+      <p>Скачивание и обновление версий автоматически, запуск в один клик, лента новостей и личные аккаунты. Тёмный дизайн — как надо.</p>
+      <div class="hero-actions">
+        <a class="btn" href="#download">Скачать лаунчер</a>
+        <a class="btn btn-ghost" href="#versions">Список версий</a>
+      </div>
+      <div class="hero-note">Windows · Python 3.9+ · Java 17+</div>
+    </div>
+    <div class="window">
+      <div class="win-top"><span></span><span></span><span></span></div>
+      <div class="win-body">
+        <div class="win-row"><span>Версия</span><b>Phobia</b></div>
+        <div class="win-row"><span>Java</span><b>17 · OpenJ9</b></div>
+        <div class="win-row"><span>Память</span><b>16 000 МБ</b></div>
+        <div class="win-row"><span>Аккаунт</span><b>makc888</b></div>
+        <button class="win-play">Играть</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <h2 class="section-title">Возможности</h2>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-ico">⬇</div>
+        <h3>Автоматическое обновление</h3>
+        <p>Клиент, библиотеки и ассеты скачиваются с серверов Mojang сами. Повторный запуск занимает секунды.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-ico">▶</div>
+        <h3>Запуск в один клик</h3>
+        <p>Выбрал версию — нажал «Играть». Лаунчер сам находит Java, собирает аргументы и стартует игру.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-ico">★</div>
+        <h3>Клиент Phobia</h3>
+        <p>Своя версия со встроенным клиентом Phobia и памятью 16 ГБ. Просто выбирайте в списке.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-ico">●</div>
+        <h3>Новости</h3>
+        <p>Лента патчноутов Java-версии прямо в лаунчере. Свой URL новостей — в настройках.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-ico">◈</div>
+        <h3>Аккаунты</h3>
+        <p>Регистрация и вход с защитой паролей. Несколько профилей — переключайтесь мгновенно.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-ico">◆</div>
+        <h3>Настройки под себя</h3>
+        <p>Своя Java, объём памяти, папка игры и пользовательские версии — всё настраивается.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="versions">
+  <div class="wrap">
+    <h2 class="section-title">Доступные версии</h2>
+    <div class="versions">
+      <div class="version">
+        <div>
+          <div class="v-name">Phobia</div>
+          <div class="v-desc">Собственный клиент · 16 ГБ памяти</div>
+        </div>
+        <span class="v-tag tag-orange">Основная</span>
+      </div>
+      <div class="version">
+        <div>
+          <div class="v-name">Latest Release</div>
+          <div class="v-desc">Последний релиз Minecraft</div>
+        </div>
+        <span class="v-tag tag-green">Стабильная</span>
+      </div>
+      <div class="version">
+        <div>
+          <div class="v-name">Latest Snapshot</div>
+          <div class="v-desc">Свежие снапшоты Mojang</div>
+        </div>
+        <span class="v-tag tag-gray">Эксперимент</span>
+      </div>
+      <div class="version">
+        <div>
+          <div class="v-name">Любая своя</div>
+          <div class="v-desc">Например 1.8.9 или 1.21.4 — по ID версии</div>
+        </div>
+        <span class="v-tag tag-gray">Произвольная</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="download">
+  <div class="wrap download">
+    <h2>Скачать PyLauncher</h2>
+    <p>Установите Python, затем запустите лаунчер одной командой.</p>
+    <a class="btn" href="launcher.py" download>Скачать launcher.py</a>
+    <div class="sysreq">
+      <div><b>Система</b>Windows 10 / 11</div>
+      <div><b>Python</b>3.9 или новее</div>
+      <div><b>Java</b>17 или новее</div>
+      <div><b>Место</b>от 2 ГБ</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>PyLauncher · v1.0</div>
+    <div>Сделано для себя и друзей</div>
+  </div>
+</footer>
+
+</body>
+</html>
