@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://africanfurka.github.io/launcher-site/sitemap.xml
