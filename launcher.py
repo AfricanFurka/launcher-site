@@ -5,6 +5,7 @@ import re
 import shutil
 import sqlite3
 import subprocess
+import sys
 import threading
 import queue
 import uuid as uuidlib
@@ -18,9 +19,14 @@ from tkinter import ttk, messagebox, filedialog
 
 import requests
 
-LAUNCHER_NAME = "PyLauncher"
+LAUNCHER_NAME = "FurkaLauncher"
 LAUNCHER_VERSION = "1.0"
-BASE_DIR = Path(__file__).resolve().parent
+if getattr(sys, "frozen", False):
+    BASE_DIR = Path(sys.executable).resolve().parent
+    DATA_DIR = Path(getattr(sys, "_MEIPASS", BASE_DIR))
+else:
+    BASE_DIR = Path(__file__).resolve().parent
+    DATA_DIR = BASE_DIR
 CONFIG_FILE = BASE_DIR / "config.json"
 DB_FILE = BASE_DIR / "accounts.db"
 
@@ -34,13 +40,13 @@ PANEL = "#18181C"
 SIDEBAR = "#151517"
 SEL = "#26262B"
 BORDER = "#1C1C20"
-ACCENT = "#FF7B1D"
-ACCENT_HOVER = "#AF5A1D"
+ACCENT = "#8B5CF6"
+ACCENT_HOVER = "#7C3AED"
 TEXT = "#FFFFFF"
 TEXT2 = "#D8D8D8"
 MUTED = "#656571"
 GREEN = "#14CF7E"
-ASSETS_DIR = BASE_DIR / "assets"
+ASSETS_DIR = DATA_DIR / "assets"
 FONT_DIR = ASSETS_DIR / "fonts"
 ICON_DIR = ASSETS_DIR / "icons"
 
@@ -713,7 +719,7 @@ class LauncherApp:
                     except ValueError:
                         pass
                 report("Запуск Phobia...")
-                cmd = [java, f"-Xmx{ram}M", "-jar", str(jar)]
+                cmd = [java, "-Xverify:none", f"-Xmx{ram}M", "-jar", str(jar)]
                 try:
                     self.game_process = subprocess.Popen(
                         cmd, cwd=str(phobia_dir),
@@ -721,7 +727,7 @@ class LauncherApp:
                     )
                 except OSError:
                     self.game_process = subprocess.Popen(
-                        f'"{java}" -Xmx{ram}M -jar "{jar}"', cwd=str(phobia_dir), shell=True,
+                        f'"{java}" -Xverify:none -Xmx{ram}M -jar "{jar}"', cwd=str(phobia_dir), shell=True,
                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
                     )
                 threading.Thread(target=self._tail_process, daemon=True).start()
