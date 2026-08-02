@@ -345,7 +345,8 @@ function escapeHtml(s) {
 }
 
 async function api(path, opts) {
-  const r = await fetch(path, opts);
+  let r;
+  try { r = await fetch(path, opts); } catch (e) { return { ok: false, status: 0, data: null, offline: true }; }
   let data = null;
   try { data = await r.json(); } catch (e) {}
   return { ok: r.ok, status: r.status, data };
@@ -359,6 +360,13 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal()
 function showLoginForm() {
   modalTitle.textContent = 'Вход';
   modalSub.textContent = 'Войдите в свой аккаунт';
+  if (!window.FURKA_API) {
+    modalBody.innerHTML = `
+      <div class="form-error" style="min-height:0;margin-bottom:12px">Сервер авторизации недоступен на этой версии сайта.</div>
+      <p style="color:#9a9aa3;font-size:13px;line-height:1.6;margin-bottom:18px">Запустите на ПК <b style="color:#D8D8D8">python server.py</b> и откройте <b style="color:#FF7B1D">http://localhost:8000</b> — там работает регистрация и вход.</p>
+      <button class="btn btn-ghost" onclick="closeModal()">Понятно</button>`;
+    return;
+  }
   modalBody.innerHTML = `
     <div class="tabs">
       <button class="active" onclick="showLoginForm()">Вход</button>
@@ -438,9 +446,9 @@ async function openProfile() {
 
 async function refreshAuth() {
   const res = await api('/api/me');
-  if (!res.ok) { authArea.style.display = 'none'; return; }
+  window.FURKA_API = res.ok;
   authArea.style.display = 'flex';
-  if (res.data.logged_in) {
+  if (res.ok && res.data.logged_in) {
     authArea.innerHTML = `
       <button class="user-pill" onclick="openProfile()">${escapeHtml(res.data.username)}</button>
       <button class="btn btn-ghost btn-small" onclick="doLogout()">Выйти</button>`;
