@@ -130,6 +130,53 @@
   footer { border-top: 1px solid #1C1C20; padding: 30px 0; color: #656571; font-size: 13px; }
   footer .wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
 
+  .auth-area { display: none; align-items: center; gap: 10px; }
+  .btn-small { padding: 8px 18px; font-size: 13px; }
+  .user-pill {
+    background: #26262B; border: 1px solid rgba(255,123,29,.4); color: #FFFFFF;
+    padding: 7px 16px; border-radius: 999px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: background .15s; font-family: inherit;
+  }
+  .user-pill:hover { background: #303037; }
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 100; display: none;
+    align-items: center; justify-content: center;
+    background: rgba(10,10,12,.72); backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    width: 380px; max-width: calc(100vw - 40px);
+    background: #18181C; border: 1px solid #26262B; border-radius: 16px;
+    padding: 28px; box-shadow: 0 34px 70px rgba(0,0,0,.6);
+  }
+  .modal-head { display: flex; justify-content: space-between; align-items: flex-start; }
+  .modal h3 { font-size: 20px; margin-bottom: 4px; }
+  .modal .sub { color: #656571; font-size: 13px; margin-bottom: 20px; }
+  .close-x {
+    background: none; border: none; color: #656571; font-size: 20px; cursor: pointer;
+    line-height: 1; padding: 4px; font-family: inherit;
+  }
+  .close-x:hover { color: #FFFFFF; }
+  .tabs { display: flex; gap: 6px; background: #141417; padding: 4px; border-radius: 10px; margin-bottom: 18px; }
+  .tabs button {
+    flex: 1; background: none; border: none; color: #9a9aa3; font-family: inherit;
+    font-size: 13px; font-weight: 600; padding: 9px 0; border-radius: 8px; cursor: pointer; transition: all .15s;
+  }
+  .tabs button.active { background: #26262B; color: #FFFFFF; }
+  .input {
+    width: 100%; background: #141417; border: 1px solid #26262B; border-radius: 10px;
+    color: #FFFFFF; font-family: inherit; font-size: 14px; padding: 12px 14px;
+    margin-bottom: 12px; outline: none; transition: border-color .15s;
+  }
+  .input:focus { border-color: rgba(255,123,29,.6); }
+  .form-error { color: #FF6363; font-size: 13px; min-height: 18px; margin: 4px 0 10px; }
+  .modal .btn { width: 100%; }
+  .profile-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #1C1C20; font-size: 13px; }
+  .profile-row:last-child { border-bottom: none; }
+  .profile-row span { color: #656571; }
+  .profile-row b { color: #D8D8D8; font-weight: 500; }
+  .btn-logout { width: 100%; margin-top: 18px; }
+
   @media (max-width: 900px) {
     .hero-grid { grid-template-columns: 1fr; }
     h1 { font-size: 34px; }
@@ -146,6 +193,7 @@
       <div class="nav-links">
         <a href="#features">Возможности</a>
         <a href="#versions">Версии</a>
+        <div class="auth-area" id="auth-area"></div>
         <a href="#" class="btn btn-ghost" style="padding:8px 18px;font-size:13px" onclick="window.location.href='FurkaLauncher.exe';return false;">Скачать</a>
       </div>
     </nav>
@@ -271,6 +319,138 @@
     <div>Сделано для себя и друзей</div>
   </div>
 </footer>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h3 id="modal-title">Вход</h3>
+        <div class="sub" id="modal-sub">Войдите в свой аккаунт</div>
+      </div>
+      <button class="close-x" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const modal = document.getElementById('modal');
+const modalTitle = document.getElementById('modal-title');
+const modalSub = document.getElementById('modal-sub');
+const modalBody = document.getElementById('modal-body');
+const authArea = document.getElementById('auth-area');
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  let data = null;
+  try { data = await r.json(); } catch (e) {}
+  return { ok: r.ok, status: r.status, data };
+}
+
+function openModal() { modal.classList.add('open'); }
+function closeModal() { modal.classList.remove('open'); }
+modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+function showLoginForm() {
+  modalTitle.textContent = 'Вход';
+  modalSub.textContent = 'Войдите в свой аккаунт';
+  modalBody.innerHTML = `
+    <div class="tabs">
+      <button class="active" onclick="showLoginForm()">Вход</button>
+      <button onclick="showRegisterForm()">Регистрация</button>
+    </div>
+    <input class="input" id="l-user" placeholder="Логин" autocomplete="username">
+    <input class="input" id="l-pass" type="password" placeholder="Пароль" autocomplete="current-password">
+    <div class="form-error" id="form-error"></div>
+    <button class="btn" onclick="doLogin()">Войти</button>`;
+}
+
+function showRegisterForm() {
+  modalTitle.textContent = 'Регистрация';
+  modalSub.textContent = 'Создайте аккаунт — это бесплатно';
+  modalBody.innerHTML = `
+    <div class="tabs">
+      <button onclick="showLoginForm()">Вход</button>
+      <button class="active" onclick="showRegisterForm()">Регистрация</button>
+    </div>
+    <input class="input" id="r-user" placeholder="Логин (3–20 символов)" autocomplete="username">
+    <input class="input" id="r-pass" type="password" placeholder="Пароль (минимум 6)" autocomplete="new-password">
+    <input class="input" id="r-pass2" type="password" placeholder="Повторите пароль" autocomplete="new-password">
+    <div class="form-error" id="form-error"></div>
+    <button class="btn" onclick="doRegister()">Зарегистрироваться</button>`;
+}
+
+function showProfile(username, createdAt) {
+  modalTitle.textContent = 'Личный кабинет';
+  modalSub.textContent = '';
+  modalBody.innerHTML = `
+    <div class="profile-row"><span>Логин</span><b>${escapeHtml(username)}</b></div>
+    <div class="profile-row"><span>Зарегистрирован</span><b>${escapeHtml(createdAt)}</b></div>
+    <button class="btn btn-ghost btn-logout" onclick="doLogout()">Выйти</button>`;
+}
+
+async function doLogin() {
+  const username = document.getElementById('l-user').value.trim();
+  const password = document.getElementById('l-pass').value;
+  const err = document.getElementById('form-error');
+  err.textContent = '';
+  if (!username || !password) { err.textContent = 'Заполните все поля'; return; }
+  const res = await api('/api/login', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({username, password})
+  });
+  if (res.ok) { closeModal(); refreshAuth(); }
+  else err.textContent = res.data?.error || 'Ошибка сервера';
+}
+
+async function doRegister() {
+  const username = document.getElementById('r-user').value.trim();
+  const password = document.getElementById('r-pass').value;
+  const password2 = document.getElementById('r-pass2').value;
+  const err = document.getElementById('form-error');
+  err.textContent = '';
+  if (password !== password2) { err.textContent = 'Пароли не совпадают'; return; }
+  const res = await api('/api/register', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({username, password})
+  });
+  if (res.ok) { closeModal(); refreshAuth(); }
+  else err.textContent = res.data?.error || 'Ошибка сервера';
+}
+
+async function doLogout() {
+  await api('/api/logout', { method: 'POST' });
+  closeModal();
+  refreshAuth();
+}
+
+async function openProfile() {
+  const res = await api('/api/me');
+  if (!res.ok || !res.data.logged_in) return;
+  showProfile(res.data.username, res.data.created_at);
+  openModal();
+}
+
+async function refreshAuth() {
+  const res = await api('/api/me');
+  if (!res.ok) { authArea.style.display = 'none'; return; }
+  authArea.style.display = 'flex';
+  if (res.data.logged_in) {
+    authArea.innerHTML = `
+      <button class="user-pill" onclick="openProfile()">${escapeHtml(res.data.username)}</button>
+      <button class="btn btn-ghost btn-small" onclick="doLogout()">Выйти</button>`;
+  } else {
+    authArea.innerHTML = `<button class="btn btn-ghost btn-small" onclick="openModal();showLoginForm()">Войти</button>`;
+  }
+}
+
+refreshAuth();
+</script>
 
 </body>
 </html>
