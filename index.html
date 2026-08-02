@@ -194,7 +194,7 @@
         <a href="#features">Возможности</a>
         <a href="#versions">Версии</a>
         <div class="auth-area" id="auth-area"></div>
-        <a href="#" class="btn btn-ghost" style="padding:8px 18px;font-size:13px" onclick="window.location.href='FurkaLauncher.exe';return false;">Скачать</a>
+        <a href="#" class="btn btn-ghost" style="padding:8px 18px;font-size:13px" onclick="startDownload();return false;">Скачать</a>
       </div>
     </nav>
   </div>
@@ -207,7 +207,7 @@
       <h1>Быстрый лаунчер<br>для <span>Minecraft</span></h1>
       <p>Скачивание и обновление версий автоматически, запуск в один клик, лента новостей и личные аккаунты. Тёмный дизайн — как надо.</p>
       <div class="hero-actions">
-        <a class="btn" href="FurkaLauncher.exe" download>Скачать FurkaLauncher</a>
+        <a class="btn" href="javascript:void(0)" onclick="startDownload()">Скачать FurkaLauncher</a>
         <a class="btn btn-ghost" href="#versions">Список версий</a>
       </div>
       <div class="hero-note">Windows · Python 3.9+ · Java 17+</div>
@@ -303,7 +303,7 @@
   <div class="wrap download">
     <h2>Скачать FurkaLauncher</h2>
     <p>Установите Python, затем запустите лаунчер одной командой.</p>
-    <a class="btn" href="FurkaLauncher.exe" download>Скачать FurkaLauncher</a>
+    <a class="btn" href="javascript:void(0)" onclick="startDownload()">Скачать FurkaLauncher</a>
     <div class="sysreq">
       <div><b>Система</b>Windows 10 / 11</div>
       <div><b>Python</b>3.9 или новее</div>
@@ -363,7 +363,7 @@ function showLoginForm() {
   if (!window.FURKA_API) {
     modalBody.innerHTML = `
       <div class="form-error" style="min-height:0;margin-bottom:12px">Сервер авторизации недоступен на этой версии сайта.</div>
-      <p style="color:#9a9aa3;font-size:13px;line-height:1.6;margin-bottom:18px">Запустите на ПК <b style="color:#D8D8D8">python server.py</b> и откройте <b style="color:#FF7B1D">http://localhost:8000</b> — там работает регистрация и вход.</p>
+      <p style="color:#9a9aa3;font-size:13px;line-height:1.6;margin-bottom:18px">Запустите на ПК <b style="color:#D8D8D8">python server.py</b> и откройте <b style="color:#FF7B1D">http://localhost:8000</b> — там работает регистрация, вход и скачивание лаунчера.</p>
       <button class="btn btn-ghost" onclick="closeModal()">Понятно</button>`;
     return;
   }
@@ -402,6 +402,29 @@ function showProfile(username, createdAt) {
     <button class="btn btn-ghost btn-logout" onclick="doLogout()">Выйти</button>`;
 }
 
+async function startDownload() {
+  const res = await api('/api/me');
+  if (!res.ok) {
+    openModal();
+    showLoginForm();
+    return;
+  }
+  if (res.data.logged_in) {
+    window.location.href = 'FurkaLauncher.exe';
+  } else {
+    window.FURKA_PENDING_DOWNLOAD = true;
+    openModal();
+    showLoginForm();
+  }
+}
+
+function finishPendingDownload() {
+  if (window.FURKA_PENDING_DOWNLOAD) {
+    window.FURKA_PENDING_DOWNLOAD = false;
+    window.location.href = 'FurkaLauncher.exe';
+  }
+}
+
 async function doLogin() {
   const username = document.getElementById('l-user').value.trim();
   const password = document.getElementById('l-pass').value;
@@ -412,7 +435,7 @@ async function doLogin() {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({username, password})
   });
-  if (res.ok) { closeModal(); refreshAuth(); }
+  if (res.ok) { closeModal(); refreshAuth(); finishPendingDownload(); }
   else err.textContent = res.data?.error || 'Ошибка сервера';
 }
 
@@ -427,7 +450,7 @@ async function doRegister() {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({username, password})
   });
-  if (res.ok) { closeModal(); refreshAuth(); }
+  if (res.ok) { closeModal(); refreshAuth(); finishPendingDownload(); }
   else err.textContent = res.data?.error || 'Ошибка сервера';
 }
 
